@@ -14,6 +14,7 @@ window.app = (function() {
   let state = 0;
   let prayerIndex = 0;
   let now = 0;
+  let flicker = 0;
 
   function setup() {
     TCCR0B = TCCR0B & ~7 | 5;
@@ -21,7 +22,7 @@ window.app = (function() {
   }
 
   function credo() {
-    let index = (now >> 4) & 3;
+    let index = flicker & 3;
     lightUp(index & 1 | (index & 2) << 2)
   }
 
@@ -30,10 +31,10 @@ window.app = (function() {
   }
 
   function ourFatherInDecade(decade) {
-    let flicker = (now >> 4) & 3;
-    if (flicker < 2) {
+    let index = flicker & 3;
+    if (index < 2) {
       decade <<= 1;
-      lightUp(flicker ? decade : decade + 1);
+      lightUp(index ? decade : decade + 1);
     } else {
       lightUp(10);
     }
@@ -44,22 +45,23 @@ window.app = (function() {
   }
 
   function hailMaryOfThree(index) {
-    let flicker = (now >> 4) & 1;
+    let side = flicker & 1;
     switch (index) {
       case 0:
-        lightUp(flicker ? 7 : 2);
+        lightUp(side ? 7 : 2);
         break;
       case 1:
-        lightUp(flicker ? 6 : 3);
+        lightUp(side ? 6 : 3);
         break;
       case 2:
-        lightUp(flicker ? 5 : 4);
+        lightUp(side ? 5 : 4);
         break;
     }
   }
 
   function loop() {
     now = TCNT0;
+    flicker = now >> 1;
     if (now < lastTimer) {
       ++hiTimer;
       if ((hiTimer & 7) === 0) {
