@@ -15,10 +15,20 @@ window.app = (function() {
   let prayerIndex = 0;
   let now = 0;
   let flicker = 0;
+  let battery = 0; // uint16_t
 
   function setup() {
+    // internal voltage reference, left align result, measure PB4
+    ADMUX = 0x64;
+    // comparator disabled, free running mode
+    ADCSRB = 0;
+    // enable ADC, start conversion, auto trigger enabled, clear interrupt flag (by writing 1)
+    // disable interrupt, division factor of 8
+    ADCSRA = 0xf2;
     TCCR0B = TCCR0B & ~7 | 5;
     ledState.fill(0);
+    // wait for first analog conversion to finish
+    while (!(ADCSRA&0x10));
   }
 
   function credo() {
@@ -70,6 +80,12 @@ window.app = (function() {
       }
     }
     lastTimer = now;
+    let analog = ADCH << 8 | ADCL; // uint16_t
+    if (analog > battery-(battery >> 2)) {
+      battery = analog;
+    } else {
+      // TODO a button must be down
+    }
     switch (state) {
       case stateDecade:
         if (prayerIndex < 5) {

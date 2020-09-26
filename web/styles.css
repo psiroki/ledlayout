@@ -1,0 +1,43 @@
+ul {
+  list-style: none;
+  padding: 0;
+  display: inline-block;
+  vertical-align: top;
+}
+
+li { list-style: none; padding: 1px 0; text-align: center; }
+
+.fieldName {
+  display: inline-block;
+  width: 160px;
+  padding-right: 3px;
+  text-align: right;
+}
+
+button {
+	box-shadow: inset 0px 1px 0px 0px #54a3f7;
+	background: linear-gradient(to bottom, #007dc1 5%, #0061a7 100%);
+	background-color: #007dc1;
+	border-radius: 3px;
+	border: 1px solid #124d77;
+	display: inline-block;
+	cursor: pointer;
+	color: #ffffff;
+	font-family: Arial;
+	font-size: 13px;
+	padding: 6px 24px;
+	text-decoration: none;
+	text-shadow: 0px 1px 0px #154682;
+}
+
+button:hover, button.pressed {
+	background:linear-gradient(to bottom, #0061a7 5%, #007dc1 100%);
+	background-color:#0061a7;
+}
+
+button:active, button.pressed {
+	position: relative;
+	top: 1px;
+}
+
+        
