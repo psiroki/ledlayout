@@ -37,15 +37,17 @@
 <ul data-sheet="runtime">
   <li>
     <label><span class="fieldName">Battery voltage: </span><input
-      id="voltageField" type="number" min="3.2" max="4.2" step="0.1" value="4.0"/></label>
-      <input id="voltageRange" type="range" min="3.2" max="4.2" step="0.1" value="4.0"/>
+      id="voltageField" type="number" min="3.2" max="4.2" step="0.01" value="4.0"/></label>
+      <input id="voltageRange" type="range" min="3.2" max="4.2" step="0.01" value="4.0"/>
   </li>
   <li>
-    <button id="prevToggle" data-values="0,33">P</button>
-    <button id="nextToggle" data-values="0,300">N</button>
-    <button id="resetToggle" data-values="0,100">R</button>
+    <button id="prevToggle" data-values="0,51">P</button>
+    <button id="nextToggle" data-values="0,470">N</button>
+    <button id="resetToggle" data-values="0,200">R</button>
   </li>
 </ul>
+<button id="mcuReset">MCU reset</button>
+<pre id="diagnostics"></pre>
 <script type="application/javascript" defer="defer" src="layout.js"></script>
 <script type="application/javascript" defer="defer" src="app.js"></script>
 </body>

@@ -36,6 +36,8 @@ button:hover, button.pressed {
 }
 
 button:active, button.pressed {
+	background:linear-gradient(to bottom, #a76100 5%, #c17d00 100%);
+	background-color:#a76100;
 	position: relative;
 	top: 1px;
 }

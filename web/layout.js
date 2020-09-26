@@ -1,5 +1,6 @@
 const canvas = document.createElement("canvas");
 const context = canvas.getContext("2d");
+let dumpEnabled = false;
 
 document.body.insertBefore(canvas, document.body.firstChild);
 
@@ -65,7 +66,9 @@ function drawCenteredText(x, y, text) {
 const c = [width * 0.5 - 0.5, height * 0.5 - 0.5];
 
 let controlList = ["diffusorSize", "baseRadius", "largeBeadInclusion", "voltage"]
-    .flatMap(e => [e + "Range", e + "Field"]).concat(["next", "reset", "prev"].map(e => e+"Toggle"));
+    .flatMap(e => [e + "Range", e + "Field"])
+    .concat(["next", "reset", "prev"].map(e => e+"Toggle"))
+    .concat("diagnostics", "mcuReset");
 let controls = controlList.reduce((obj, e) => (obj[e] = document.getElementById(e), obj), {});
 let config = {};
 
@@ -209,7 +212,7 @@ const rangeSuffix = "Range";
 const toggleSuffix = "Toggle";
 Object.keys(controls).forEach(key => {
   let control = controls[key];
-  while (control && !control.getAttribute("data-sheet")) {
+  while (control && control !== document.documentElement && !control.getAttribute("data-sheet")) {
     control = control.parentNode;
   }
   let sheet = sheets.config;
@@ -288,7 +291,10 @@ sheets.runtime.update = (key) => {
   runtime.analog = pb4Adc;
   ADCH = pb4Adc >> 2;
   ADCL = pb4Adc << 6 & 0xff;
-  console.log("pb4Voltage: "+pb4Voltage.toFixed(2)+" that is "+pb4Adc+" compared to normal: "+(pb4Adc/(pb4AdcBase >> 7)).toFixed(1)+" pp128");
+  if (dumpEnabled) {
+    console.log("pb4Voltage: "+pb4Voltage.toFixed(2)+" that is "+pb4Adc+
+      " compared to normal: "+(pb4Adc/(pb4AdcBase >> 7)).toFixed(1)+" pp128");
+  }
 };
 
 function lightUp(index) {
@@ -302,8 +308,15 @@ function updateState(t) {
       const div = divisor[TCCR0B & 7];
       if (div) TCNT0 = (window.app.freq || 1e6)/div*t & 0xff;
     }
-    if (!initialized) window.app.setup();
+    if (!initialized) {
+      sheets.runtime.update("voltage");
+      window.app.setup();
+      initialized = true;
+    }
     window.app.loop();
+    if (app.diagnostics) {
+      controls.diagnostics.textContent = JSON.stringify(app.diagnostics(), null, 2);
+    }
   } else {
     let one = ledState.findIndex(e => e);
     if (one >= 0) ledState[one] = 0;
@@ -315,5 +328,9 @@ function updateState(t) {
 
   requestAnimationFrame(updateState);
 }
+
+controls.mcuReset.addEventListener("click", () => {
+  initialized = false;
+});
 
 updateState();
