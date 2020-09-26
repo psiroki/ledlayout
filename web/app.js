@@ -17,6 +17,7 @@ window.app = (function () {
   let corruptionCheck = 0; // uint32_t
 
   const magicCookie = 0x2b8acddb;
+  const sleepCookie = 0xcd806faf;
 
   const holdTime = 4;
   const cancelTime = 64;
@@ -33,8 +34,14 @@ window.app = (function () {
 
   const prayerCount = 170;
 
+  const lightsOff = 11;
+
   function setup() {
-    if (corruptionCheck != magicCookie || prayerIndex >= 170) {
+    if (corruptionCheck == magicCookie) {
+      corruptionCheck = sleepCookie;
+      lightUp(lightsOff);
+      return powerDown();
+    } else if (corruptionCheck != sleepCookie || prayerIndex >= 170) {
       lastTimer = 0;
       hiTimer = 0;
       state = 0;
@@ -44,6 +51,8 @@ window.app = (function () {
       battery = 1;
       buttonHandled = 0;
       buttonTime = 0;
+      corruptionCheck = magicCookie;
+    } else if (corruptionCheck == sleepCookie) {
       corruptionCheck = magicCookie;
     }
     // internal voltage reference, left align result, measure PB4
@@ -154,7 +163,7 @@ window.app = (function () {
   function showBattery() {
     let bat10 = battery < 35500 ? 0 :
       battery >= 41500 ? 9 : (battery - 35500) / 600 | 0;
-    lightUp(hiTimer & 4 ? 11 : bat10);
+    lightUp(hiTimer & 4 ? lightsOff : bat10);
   }
 
   function loop() {
@@ -213,7 +222,7 @@ window.app = (function () {
       }
     }
     if (buttonTime >= holdTime) {
-      lightUp(11);
+      lightUp(lightsOff);
     } else {
       switch (state) {
         case stateDecade:
