@@ -8,21 +8,23 @@ infoBox.style.whiteSpace = "pre";
 document.body.insertBefore(infoBox, canvas.nextSibling);
 
 function bindValues(input, output, formatter) {
-	let prefix = output.getAttribute("data-prefix") || "";
-	if(!formatter)
-		formatter = value => value;
-	let sync = () => {
-		output.value = prefix+formatter(input.value);
-	};
-	input.addEventListener("input", sync);
-	sync();
+  let prefix = output.getAttribute("data-prefix") || "";
+  if (!formatter)
+    formatter = value => value;
+  let sync = () => {
+    output.value = prefix + formatter(input.value);
+  };
+  input.addEventListener("input", sync);
+  sync();
 }
 
 function bindValuesTight(a, b, cb) {
-	let f = cb ? value => (cb(value), value) : null;
-	bindValues(a, b, f);
-	bindValues(b, a, f);
+  let f = cb ? value => (cb(value), value) : null;
+  bindValues(a, b, f);
+  bindValues(b, a, f);
 }
+
+const ledState = new Array(12).fill(0);
 
 const width = 22;
 const height = 22;
@@ -50,9 +52,19 @@ function drawCircle(x, y, r) {
   context.stroke();
 }
 
+function drawCenteredText(x, y, text) {
+  let baseline = context.textBaseline;
+  let align = context.textAlign;
+  context.textBaseline = "middle";
+  context.textAlign = "center";
+  context.fillText(text, x, y);
+  context.textBaseline = baseline;
+  context.textAlign = align;
+}
+
 const c = [width * 0.5 - 0.5, height * 0.5 - 0.5];
 
-let controlList = ["diffusorSize", "baseRadius", "largeBeadInclusion"].flatMap(e => [e + "Range", e+"Field"]);
+let controlList = ["diffusorSize", "baseRadius", "largeBeadInclusion"].flatMap(e => [e + "Range", e + "Field"]);
 let controls = controlList.reduce((obj, e) => (obj[e] = document.getElementById(e), obj), {});
 let config = {};
 
@@ -83,7 +95,7 @@ function generate(r, mmDiffusorSize, ourFatherIncluded, ourFatherInclusion) {
 
   let lastRaster = null;
 
-  context.font = rasterSize+"px sans-serif";
+  context.font = rasterSize + "px sans-serif";
 
   function drawDelta(lastRaster, thisRaster) {
     if (lastRaster === null) {
@@ -118,7 +130,7 @@ function generate(r, mmDiffusorSize, ourFatherIncluded, ourFatherInclusion) {
       angle = 0;
       rAdj = 1 - ourFatherInclusion * 2;
     }
-    let orientation = (angle/Math.PI + 0.75) % 1 >= 0.5 ? 1 : 0;
+    let orientation = (angle / Math.PI + 0.75) % 1 >= 0.5 ? 1 : 0;
     let coords = [Math.sin(angle) * r, -Math.cos(angle) * r].map(e => e * rAdj);
     let thisRaster = coords.map(Math.round);
     for (let m = 0; m < 1; ++m) {
@@ -136,7 +148,8 @@ function generate(r, mmDiffusorSize, ourFatherIncluded, ourFatherInclusion) {
         setRaster(p[0], p[1], Math.round(orientation) ? "red" : "blue");
       }
       drawCircle(...coords.map(transformDimension).concat([diffusorSize]));
-      context.fillStyle = em ? "#8cfc" : "#2bfc";
+      let fillColor = em ? "8cf" : "2bf";
+      context.fillStyle = "#" + fillColor + (ledState[i] ? "c" : "4");
       context.fill();
       context.strokeStyle = "#0008";
       context.beginPath();
@@ -144,6 +157,8 @@ function generate(r, mmDiffusorSize, ourFatherIncluded, ourFatherInclusion) {
       context.lineTo(...coords.map(transformDimension));
       context.stroke();
       context.strokeStyle = "#000";
+      context.fillStyle = "#" + Array.from(fillColor).map(e => (15 - parseInt(e, 16)).toString(16)).join("") + "c";
+      drawCenteredText(...coords.map(transformDimension), i.toString());
       if (m || Math.abs(coords[0]) < 0.5) break;
       coords[0] = -coords[0];
       if (orientation === 0) coords[0] -= 1.0;
@@ -152,9 +167,13 @@ function generate(r, mmDiffusorSize, ourFatherIncluded, ourFatherInclusion) {
 
   overlay.forEach(e => e());
 
-  infoBox.textContent = size.map(e => (2 * e * mmRasterSize).toFixed(1)+"mm").join(" x ") +
-    "\nDiffusor size: "+diffusorSize/rasterSize*mmRasterSize+"mm";
+  infoBox.textContent = size.map(e => (2 * e * mmRasterSize).toFixed(1) + "mm").join(" x ") +
+    "\nDiffusor size: " + diffusorSize / rasterSize * mmRasterSize + "mm";
 
+}
+
+function redraw() {
+  generate(config.baseRadius || r, config.diffusorSize || diffusorSize, ourFatherIncluded, config.largeBeadInclusion || ourFatherInclusion);
 }
 
 function configUpdated(key) {
@@ -163,27 +182,57 @@ function configUpdated(key) {
   } catch (e) {
     // never mind
   }
-  generate(config.baseRadius || r, config.diffusorSize || diffusorSize, ourFatherIncluded, config.largeBeadInclusion || ourFatherInclusion);
+  redraw();
 }
 
 const rangeSuffix = "Range";
 Object.keys(controls).forEach(key => {
-	if (key.substring(key.length - rangeSuffix.length) === rangeSuffix) {
-		const base = key.substring(0, key.length - rangeSuffix.length);
-		const fieldName = base + "Field";
-		if (fieldName in controls) {
-		    console.log("Binding "+key+" with "+fieldName);
-			if (base in config) {
-				[key, fieldName].forEach(n => controls[n].value = config[base]);
-			} else {
-				config[base] = +controls[fieldName].value;
-			}
-			bindValuesTight(controls[fieldName], controls[key], newValue => {
-				config[base] = +newValue;
-				configUpdated(base);
-			});
-		}
-	}
+  if (key.substring(key.length - rangeSuffix.length) === rangeSuffix) {
+    const base = key.substring(0, key.length - rangeSuffix.length);
+    const fieldName = base + "Field";
+    if (fieldName in controls) {
+      console.log("Binding " + key + " with " + fieldName);
+      if (base in config) {
+        [key, fieldName].forEach(n => controls[n].value = config[base]);
+      } else {
+        config[base] = +controls[fieldName].value;
+      }
+      bindValuesTight(controls[fieldName], controls[key], newValue => {
+        config[base] = +newValue;
+        configUpdated(base);
+      });
+    }
+  }
 });
 
-generate(r, diffusorSize, ourFatherIncluded, ourFatherInclusion);
+let initialized = false;
+let TCNT0 = 0;
+let TCCR0B = 0;
+const divisor = [null, 1, 8, 64, 256, 1024, null, null];
+
+function lightUp(index) {
+  ledState.fill(0);
+  if (!(index & 0xf0)) ledState[index] = 1;
+}
+
+function updateState(t) {
+  if (window.app) {
+    if (window.app.freq) {
+      const div = divisor[TCCR0B & 7];
+      if (div) TCNT0 = (window.app.freq || 1e6)/div*t & 0xff;
+    }
+    if (!initialized) window.app.setup();
+    window.app.loop();
+  } else {
+    let one = ledState.findIndex(e => e);
+    if (one >= 0) ledState[one] = 0;
+    one = (one + 1) % ledState.length;
+    ledState[one] = 1;
+  }
+  //generate(r, diffusorSize, ourFatherIncluded, ourFatherInclusion);
+  redraw();
+
+  requestAnimationFrame(updateState);
+}
+
+updateState();
