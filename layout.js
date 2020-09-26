@@ -1,5 +1,6 @@
 const canvas = document.createElement("canvas");
 const context = canvas.getContext("2d");
+let dumpEnabled = false;
 
 document.body.insertBefore(canvas, document.body.firstChild);
 
@@ -64,7 +65,10 @@ function drawCenteredText(x, y, text) {
 
 const c = [width * 0.5 - 0.5, height * 0.5 - 0.5];
 
-let controlList = ["diffusorSize", "baseRadius", "largeBeadInclusion"].flatMap(e => [e + "Range", e + "Field"]);
+let controlList = ["diffusorSize", "baseRadius", "largeBeadInclusion", "voltage"]
+    .flatMap(e => [e + "Range", e + "Field"])
+    .concat(["next", "reset", "prev"].map(e => e+"Toggle"))
+    .concat("diagnostics", "mcuReset");
 let controls = controlList.reduce((obj, e) => (obj[e] = document.getElementById(e), obj), {});
 let config = {};
 
@@ -185,9 +189,39 @@ function configUpdated(key) {
   redraw();
 }
 
+const runtime = {
+  voltage: 4,
+  next: 0,
+  reset: 0,
+  prev: 0,
+  analog: 0
+};
+
+const sheets = {
+  config: {
+    values: config,
+    update: configUpdated
+  },
+  runtime: {
+    values: runtime,
+    update: () => {}
+  }
+};
+
 const rangeSuffix = "Range";
+const toggleSuffix = "Toggle";
 Object.keys(controls).forEach(key => {
-  if (key.substring(key.length - rangeSuffix.length) === rangeSuffix) {
+  let control = controls[key];
+  while (control && control !== document.documentElement && !control.getAttribute("data-sheet")) {
+    control = control.parentNode;
+  }
+  let sheet = sheets.config;
+  if (control && control.getAttribute("data-sheet")) {
+    sheet = sheets[control.getAttribute("data-sheet")] || sheet;
+  }
+  let config = sheet.values;
+  control = controls[key];
+  if (key.endsWith(rangeSuffix)) {
     const base = key.substring(0, key.length - rangeSuffix.length);
     const fieldName = base + "Field";
     if (fieldName in controls) {
@@ -199,7 +233,33 @@ Object.keys(controls).forEach(key => {
       }
       bindValuesTight(controls[fieldName], controls[key], newValue => {
         config[base] = +newValue;
-        configUpdated(base);
+        sheet.update(base);
+      });
+    }
+  } else if (key.endsWith(toggleSuffix)) {
+    const base = key.substring(0, key.length - toggleSuffix.length);
+    const values = control.getAttribute("data-values").trim().split(/\s*,\s*/g).map(e => +e);
+    if (control.tagName.toLowerCase() === "button") {
+      control.addEventListener("mousedown", e => {
+        const release = () => {
+          config[base] = values[0];
+          try {
+            control.classList.remove("pressed");
+            document.documentElement.removeEventListener("mouseup", release);
+          } finally {
+            sheet.update(base);
+          }
+        };
+        config[base] = values[1];
+        try {
+          if (!e.shiftKey || control.classList.contains("pressed")) {
+            document.documentElement.addEventListener("mouseup", release);
+          } else {
+            control.classList.add("pressed");
+          }
+        } finally {
+          sheet.update(base);
+        }
       });
     }
   }
@@ -208,7 +268,34 @@ Object.keys(controls).forEach(key => {
 let initialized = false;
 let TCNT0 = 0;
 let TCCR0B = 0;
+let ADMUX = 0;
+let ADCSRA = 0;
+let ADCSRB = 0;
+let ADCH = 0;
+let ADCL = 0;
 const divisor = [null, 1, 8, 64, 256, 1024, null, null];
+
+sheets.runtime.update = (key) => {
+  // all resistances are in kiloohms
+  const baseLowerResistance = 200; // R2
+  let lowerConductivity = 1/baseLowerResistance;
+  for (let toggle of ["next", "reset", "prev"]) {
+    if (runtime[toggle]) lowerConductivity += 1/runtime[toggle];  // R3, R4...
+  }
+  const lowerResistance = 1/lowerConductivity;
+  const upperResistance = 1000; // R1
+  const pb4Voltage = runtime.voltage / (lowerResistance + upperResistance) * lowerResistance;
+  const pb4Base = runtime.voltage / (baseLowerResistance + upperResistance) * baseLowerResistance;
+  const pb4Adc = pb4Voltage/1.1*1024|0;
+  const pb4AdcBase = pb4Base/1.1*1024|0;
+  runtime.analog = pb4Adc;
+  ADCH = pb4Adc >> 2;
+  ADCL = pb4Adc << 6 & 0xff;
+  if (dumpEnabled) {
+    console.log("pb4Voltage: "+pb4Voltage.toFixed(2)+" that is "+pb4Adc+
+      " compared to normal: "+(pb4Adc/(pb4AdcBase >> 7)).toFixed(1)+" pp128");
+  }
+};
 
 function lightUp(index) {
   ledState.fill(0);
@@ -221,8 +308,15 @@ function updateState(t) {
       const div = divisor[TCCR0B & 7];
       if (div) TCNT0 = (window.app.freq || 1e6)/div*t & 0xff;
     }
-    if (!initialized) window.app.setup();
+    if (!initialized) {
+      sheets.runtime.update("voltage");
+      window.app.setup();
+      initialized = true;
+    }
     window.app.loop();
+    if (app.diagnostics) {
+      controls.diagnostics.textContent = JSON.stringify(app.diagnostics(), null, 2);
+    }
   } else {
     let one = ledState.findIndex(e => e);
     if (one >= 0) ledState[one] = 0;
@@ -234,5 +328,9 @@ function updateState(t) {
 
   requestAnimationFrame(updateState);
 }
+
+controls.mcuReset.addEventListener("click", () => {
+  initialized = false;
+});
 
 updateState();

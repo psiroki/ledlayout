@@ -17,23 +17,37 @@
 <meta property="og:image:type" content="image/jpeg"/ -->
 </head>
 <body>
-<ul>
-<li>
-  <label><span class="fieldName">Large bead inclusion: </span><input
-    id="largeBeadInclusionField" type="number" min="-0.5" max="0.5" step="0.001" value="0.25"/></label>
-    <input id="largeBeadInclusionRange" type="range" min="-0.5" max="0.5" step="0.001" value="0.25"/>
-</li>
-<li>
-  <label><span class="fieldName">Radius: </span><input
-    id="baseRadiusField" type="number" min="0.5" max="10" step="0.001" value="6.5"/></label>
-    <input id="baseRadiusRange" type="range" min="0.5" max="10" step="0.001" value="6.5"/>
-</li>
-<li>
-  <label><span class="fieldName">Diffusor diameter (mm): </span><input
-    id="diffusorSizeField" type="number" min="0.5" max="10" step="0.001" value="4.5"/></label>
-    <input id="diffusorSizeRange" type="range" min="0.5" max="10" step="0.001" value="4.5"/>
-</li>
+<ul data-sheet="config">
+  <li>
+    <label><span class="fieldName">Large bead inclusion: </span><input
+      id="largeBeadInclusionField" type="number" min="-0.5" max="0.5" step="0.001" value="0.25"/></label>
+      <input id="largeBeadInclusionRange" type="range" min="-0.5" max="0.5" step="0.001" value="0.25"/>
+  </li>
+  <li>
+    <label><span class="fieldName">Radius: </span><input
+      id="baseRadiusField" type="number" min="0.5" max="10" step="0.001" value="6.5"/></label>
+      <input id="baseRadiusRange" type="range" min="0.5" max="10" step="0.001" value="6.5"/>
+  </li>
+  <li>
+    <label><span class="fieldName">Diffusor diameter (mm): </span><input
+      id="diffusorSizeField" type="number" min="0.5" max="10" step="0.001" value="4.5"/></label>
+      <input id="diffusorSizeRange" type="range" min="0.5" max="10" step="0.001" value="4.5"/>
+  </li>
 </ul>
+<ul data-sheet="runtime">
+  <li>
+    <label><span class="fieldName">Battery voltage: </span><input
+      id="voltageField" type="number" min="3.2" max="4.2" step="0.01" value="4.0"/></label>
+      <input id="voltageRange" type="range" min="3.2" max="4.2" step="0.01" value="4.0"/>
+  </li>
+  <li>
+    <button id="prevToggle" data-values="0,51">P</button>
+    <button id="nextToggle" data-values="0,470">N</button>
+    <button id="resetToggle" data-values="0,200">R</button>
+  </li>
+</ul>
+<button id="mcuReset">MCU reset</button>
+<pre id="diagnostics"></pre>
 <script type="application/javascript" defer="defer" src="layout.js"></script>
 <script type="application/javascript" defer="defer" src="app.js"></script>
 </body>
