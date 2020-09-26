@@ -14,6 +14,10 @@ window.app = (function () {
   let buttonHandled = 0;
   let buttonTime = 0;
 
+  let corruptionCheck = 0; // uint32_t
+
+  const magicCookie = 0x2b8acddb;
+
   const holdTime = 4;
   const cancelTime = 64;
 
@@ -30,15 +34,19 @@ window.app = (function () {
   const prayerCount = 170;
 
   function setup() {
-    hiTimer = 0;
-    state = 0;
-    prayerIndex = 0;
-    now = 0;
-    flicker = 0;
-    battery = 1; // uint16_t
-    buttonHandled = 0;
-    buttonTime = 0;
-      // internal voltage reference, left align result, measure PB4
+    if (corruptionCheck != magicCookie || prayerIndex >= 170) {
+      lastTimer = 0;
+      hiTimer = 0;
+      state = 0;
+      prayerIndex = 0;
+      now = 0;
+      flicker = 0;
+      battery = 1;
+      buttonHandled = 0;
+      buttonTime = 0;
+      corruptionCheck = magicCookie;
+    }
+    // internal voltage reference, left align result, measure PB4
     ADMUX = 0x64;
     // comparator disabled, free running mode
     ADCSRB = 0;
