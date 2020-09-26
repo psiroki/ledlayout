@@ -240,10 +240,14 @@ Object.keys(controls).forEach(key => {
     const base = key.substring(0, key.length - toggleSuffix.length);
     const values = control.getAttribute("data-values").trim().split(/\s*,\s*/g).map(e => +e);
     if (control.tagName.toLowerCase() === "button") {
-      control.addEventListener("mousedown", e => {
+      let pressed = false;
+      const press = (e) => {
+        if (pressed) return;
+        pressed = true;
         const release = () => {
           config[base] = values[0];
           try {
+            pressed = false;
             control.classList.remove("pressed");
             document.documentElement.removeEventListener("mouseup", release);
           } finally {
@@ -252,14 +256,17 @@ Object.keys(controls).forEach(key => {
         };
         config[base] = values[1];
         try {
-          if (!e.shiftKey || control.classList.contains("pressed")) {
-            document.documentElement.addEventListener("mouseup", release);
-          } else {
-            control.classList.add("pressed");
-          }
+          document.documentElement.addEventListener("mouseup", release);
+          control.classList.add("pressed");
         } finally {
           sheet.update(base);
         }
+      };
+      control.addEventListener("mousemove", e => {
+        if (e.buttons === 1) press(e);
+      });
+      control.addEventListener("mousedown", e => {
+        press(e);
       });
     }
   }
