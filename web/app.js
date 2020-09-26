@@ -15,7 +15,7 @@ window.app = (function () {
   let buttonTime = 0;
 
   const holdTime = 3;
-  const cancelTime = 32;
+  const cancelTime = 64;
 
   const stateDecade = 0;
   const stateMystery = 1;
@@ -74,6 +74,21 @@ window.app = (function () {
     lightUp(flicker & 1 ? decade : decade + 1);
   }
 
+  function showMystery(index) {
+    let f = flicker & 3;
+    if (index & 1) {
+      lightUp(f + 3);
+    } else if (index == 0) {
+      if (f == 3) {
+        lightUp(10);
+      } else {
+        lightUp(f);
+      }
+    } else {
+      lightUp(f + 7);
+    }
+  }
+
   function ourFatherInDecade(decade) {
     let index = flicker & 3;
     if (index < 2) {
@@ -112,7 +127,7 @@ window.app = (function () {
   }
 
   function prepButton(id, turn) {
-    if (buttonHandled === id && turn) {
+    if (buttonHandled == id && turn) {
       if (buttonTime < cancelTime) {
         ++buttonTime;
       } else {
@@ -150,7 +165,7 @@ window.app = (function () {
           switch (buttonHandled) {
             case nextButton:
               if (buttonTime >= holdTime) {
-                state = stateMystery;
+                state = state == stateMystery ? stateOverview : stateMystery;
               } else {
                 stepPrayer(1);
               }
@@ -210,7 +225,7 @@ window.app = (function () {
             }
           } else {
             let cycleIndex = (prayerIndex - 5) % 11;
-            if (cycleIndex === 0) {
+            if (cycleIndex == 0) {
               ourFatherInDecade(((prayerIndex - 5) / 11 | 0) % 5);
             } else {
               hailMary(cycleIndex - 1);
@@ -222,6 +237,13 @@ window.app = (function () {
             introductoryPrayer();
           } else {
             showDecade(((prayerIndex - 5) / 11 | 0) % 5);
+          }
+          break;
+        case stateOverview:
+          if (prayerIndex < 5) {
+            introductoryPrayer();
+          } else {
+            showMystery((prayerIndex - 5) / 55 | 0);
           }
           break;
         case stateBattery:
