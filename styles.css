@@ -15,7 +15,6 @@ li { list-style: none; padding: 1px 0; text-align: center; }
 }
 
 button {
-	box-shadow: inset 0px 1px 0px 0px #54a3f7;
 	background: linear-gradient(to bottom, #007dc1 5%, #0061a7 100%);
 	background-color: #007dc1;
 	border-radius: 3px;
@@ -39,6 +38,11 @@ button:hover, button.pressed {
 button.pressed {
 	background:linear-gradient(to bottom, #a76100 5%, #c17d00 100%);
 	background-color:#a76100;
+}
+
+button:focus {
+	outline: none;
+	box-shadow: 0 0 2px 1px #0008;
 }
 
 button:active {
