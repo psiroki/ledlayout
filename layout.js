@@ -275,6 +275,7 @@ Object.keys(controls).forEach(key => {
 });
 
 let initialized = false;
+let poweredDown = false;
 let TCNT0 = 0;
 let TCCR0B = 0;
 let ADMUX = 0;
@@ -283,6 +284,10 @@ let ADCSRB = 0;
 let ADCH = 0;
 let ADCL = 0;
 const divisor = [null, 1, 8, 64, 256, 1024, null, null];
+
+function powerDown() {
+  poweredDown = true;
+}
 
 sheets.runtime.update = (key) => {
   // all resistances are in kiloohms
@@ -322,7 +327,7 @@ function updateState(t) {
       window.app.setup();
       initialized = true;
     }
-    window.app.loop();
+    if (!poweredDown) window.app.loop();
     if (app.diagnostics) {
       controls.diagnostics.textContent = JSON.stringify(app.diagnostics(), null, 2);
     }
@@ -340,6 +345,7 @@ function updateState(t) {
 
 controls.mcuReset.addEventListener("click", () => {
   initialized = false;
+  poweredDown = false;
 });
 
 updateState();
