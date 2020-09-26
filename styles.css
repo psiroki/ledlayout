@@ -35,11 +35,13 @@ button:hover, button.pressed {
 	background-color:#0061a7;
 }
 
-button:active, button.pressed {
+button.pressed {
 	background:linear-gradient(to bottom, #a76100 5%, #c17d00 100%);
 	background-color:#a76100;
-	position: relative;
-	top: 1px;
+}
+
+button:active {
+	transform: translate(0px, 1px);
 }
 
         

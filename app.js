@@ -194,7 +194,6 @@ window.app = (function () {
       }
     } else if (battery > 128) {
       let ratio = analog / (battery >> 7) | 0; // uint8_t
-      console.log(ratio, analog, battery);
       if (ratio >= 82) {
         prepButton(nextButton, turn);
       } else if (ratio >= 64) {
