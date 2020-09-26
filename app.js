@@ -14,7 +14,7 @@ window.app = (function () {
   let buttonHandled = 0;
   let buttonTime = 0;
 
-  const holdTime = 3;
+  const holdTime = 4;
   const cancelTime = 64;
 
   const stateDecade = 0;

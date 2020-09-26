@@ -241,7 +241,7 @@ Object.keys(controls).forEach(key => {
     const values = control.getAttribute("data-values").trim().split(/\s*,\s*/g).map(e => +e);
     if (control.tagName.toLowerCase() === "button") {
       let pressed = false;
-      const press = (e) => {
+      const press = () => {
         if (pressed) return;
         pressed = true;
         const release = () => {
@@ -249,24 +249,26 @@ Object.keys(controls).forEach(key => {
           try {
             pressed = false;
             control.classList.remove("pressed");
-            document.documentElement.removeEventListener("mouseup", release);
+            document.documentElement.removeEventListener("pointerup", release);
           } finally {
             sheet.update(base);
           }
         };
         config[base] = values[1];
         try {
-          document.documentElement.addEventListener("mouseup", release);
+          document.documentElement.addEventListener("pointerup", release);
           control.classList.add("pressed");
         } finally {
           sheet.update(base);
         }
       };
-      control.addEventListener("mousemove", e => {
-        if (e.buttons === 1) press(e);
+      control.addEventListener("pointermove", e => {
+        if (e.pressure > 0) press();
       });
-      control.addEventListener("mousedown", e => {
-        press(e);
+      control.addEventListener("pointerdown", e => {
+        e.preventDefault();
+        e.target.releasePointerCapture(e.pointerId);
+        press();
       });
     }
   }
