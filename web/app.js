@@ -108,10 +108,10 @@ window.app = (function () {
 
   function ourFatherInDecade(decade) {
     let index = flicker & 3;
-    if (index < 2) {
-      showDecade(decade);
-    } else {
+    if (index >= 2 || (hiTimer & 4)) {
       lightUp(10);
+    } else {
+      showDecade(decade);
     }
   }
 
