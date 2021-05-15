@@ -38,16 +38,27 @@ canvas.height = height * rasterSize;
 canvas.style.width = canvas.width / window.devicePixelRatio + "px";
 canvas.style.height = canvas.height / window.devicePixelRatio + "px";
 
+let drawList = [];
+
 function setRaster(x, y, color, draw) {
   if (!color) color = "#000f";
   x = Math.floor(x);
   y = Math.floor(y);
   context.fillStyle = color;
   if (!draw) draw = context.fillRect.bind(context);
+  drawList.push({_name: "rect", x: x * mmRasterSize, y: y * mmRasterSize, width: mmRasterSize, height: mmRasterSize});
   draw(x * rasterSize, y * rasterSize, rasterSize, rasterSize);
 }
 
 function drawCircle(x, y, r) {
+  drawList.push({
+    _name: "circle",
+    cx: x * mmRasterSize / rasterSize,
+    cy: y * mmRasterSize / rasterSize, r: r * mmRasterSize / rasterSize,
+    fill: "none",
+    stroke: "black",
+    "stroke-width": "0.125mm"
+  });
   context.beginPath();
   context.ellipse(x, y, r, r, 0, 2 * Math.PI, 0);
   context.stroke();
@@ -83,11 +94,15 @@ function generate(r, mmDiffusorSize, ourFatherIncluded, ourFatherInclusion) {
   context.save();
   context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
+  drawList = [];
+
   for (let y = 0; y < height; ++y) {
     for (let x = 0; x < width; ++x) {
       drawCircle((x + 0.5) * rasterSize, (y + 0.5) * rasterSize, rasterSize * 0.3);
     }
   }
+
+  drawList.forEach(e => e.stroke = "#888");
 
   const diffusorSize = mmDiffusorSize / mmRasterSize * rasterSize;
   const count = 10 + (ourFatherIncluded ? 1 : 0);
@@ -174,6 +189,13 @@ function generate(r, mmDiffusorSize, ourFatherIncluded, ourFatherInclusion) {
   infoBox.textContent = size.map(e => (2 * e * mmRasterSize).toFixed(1) + "mm").join(" x ") +
     "\nDiffusor size: " + diffusorSize / rasterSize * mmRasterSize + "mm";
 
+}
+
+function generateSvg() {
+  let lines = [`<svg viewBox="${[0, 0, width, height].map(e => e * 4).join(" ")}" xmlns="http://www.w3.org/2000/svg">`];
+  lines.push(...drawList.map(e => `<${e._name} ${Object.entries(e).filter(e => !e[0].startsWith("_")).map(e => e[0]+"="+JSON.stringify(e[1].toString())).join(" ")}/>`));
+  lines.push("</svg>");
+  return lines.join("\n")
 }
 
 function redraw() {
