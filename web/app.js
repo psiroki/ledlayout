@@ -139,7 +139,7 @@ window.app = (function () {
       prayerIndex -= (prayerCount - delta);
     } else {
       prayerIndex += delta;
-      if (prayerIndex > prayerCount) prayerIndex -= prayerCount;
+      if (prayerIndex >= prayerCount) prayerIndex -= prayerCount;
     }
   }
 
